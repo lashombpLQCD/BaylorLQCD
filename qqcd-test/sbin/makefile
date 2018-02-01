@@ -1,6 +1,6 @@
 # BS removed qqcddata = /home/barals/andyfiles/scratch/cfgfiles/compileout/test
-qqcdhome = /home/whytet/biglat1569/andyworkinglagfib10/qqcd-test
-qqcddata = /home/whytet/biglat1569/andyworkinglagfib10/qqcd-test/sbin/objs
+qqcdhome = /home/YOURKODIAKUSER/BaylorLQCD/qqcd-test
+qqcddata = /home/YOURKODIAKUSER/BaylorLQCD/qqcd-test/sbin/objs
 ##BSqqcddata = /data/barals/qqcd/scratch/cfgfiles/compileout/test
 #cc = /home/qcd2/qqcd-test/sbin/mpif90
 #cc = mpifort   # for scali mpi 
