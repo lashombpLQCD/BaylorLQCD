@@ -1511,8 +1511,6 @@ subroutine eigmodesLAPACK(mat,m,mode,eval,evec)
 !print *, 'rtol =',rtol
 !endif
 
-! Dr. Wilcox!!! This merge should be rejected!! -TW 1/31/18
-
 
   ! ignore initial guess and use 0
   !xe(:6,:ntotal,:4,:2,:8) = 0.0_KR2
