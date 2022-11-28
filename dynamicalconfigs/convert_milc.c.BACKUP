@@ -1,0 +1,330 @@
+// program to convert MILC binary gauge files to 
+// a version compatible with the Fortran program
+// Travis Whyte
+// March 11th 2018
+
+
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <mpi.h>
+
+#define MAXFILENAME  256
+#define MILC_VERSION_NUMBER 20103
+#define TIMESTAMP_STRING_LEN 68
+
+
+void byterevn(int w[], int n);
+
+int main(int argc, char *argv[]) {
+   MPI_File mpiin;
+   long int offset = 1769472;
+   long int myidoff;
+   long int myidlong;
+   long int start;
+   long int header = 97;
+   MPI_Status status;
+   MPI_File mpiout;
+   FILE *in;
+   FILE *out;
+   char fnamein[FILENAME_MAX] = "l2464f211b600m0102m0509m635a.1000";
+   char fnameout[FILENAME_MAX];
+   int milc_magic_number[1];
+   int dim[4];
+   int ierr, myid, numprocs, err;
+   int t, z, y, x, mu, icri, isite, ibl, ieo;
+   int k = 0;
+   char startfile[MAXFILENAME];
+   int total_sweeps[1];
+   int byterevflag;
+   float buffer[442368];
+   float u[6];
+   unsigned int check[2];
+   float myu[6];
+
+   
+   ierr = MPI_Init(&argc, &argv);
+   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+   ierr = MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+
+/* get header info */
+   if ( (in = fopen(fnamein, "rb")) == NULL ) {
+      fprintf(stderr, "Unable to open input file %s, ", fnamein);
+      fprintf(stderr, "error %d.\n", errno);
+      exit(1);
+   }
+
+   fread(milc_magic_number, sizeof(int), 1, in);
+   if(*milc_magic_number == MILC_VERSION_NUMBER) {
+      byterevflag = 0;
+   }
+   else {
+      byterevn(milc_magic_number, 1);
+      if(*milc_magic_number == MILC_VERSION_NUMBER) {
+         byterevflag = 1;
+      } else {
+         printf("Unrecognized version number: %d\nTerminating program.\n",
+                *milc_magic_number);
+         exit(1);
+      }
+   }
+   fread(dim, sizeof(int), 4, in);
+   if (byterevflag == 1) {
+      byterevn(dim, 4);
+   }
+
+   fread(startfile, sizeof(char), TIMESTAMP_STRING_LEN, in);
+
+   fread(check, sizeof(unsigned int), 2, in);
+ //  fclose(in);
+
+  // fclose(in); 
+   //end get header info
+
+  // ierr = MPI_File_open(MPI_COMM_WORLD,"l2464f211b600m0102m0509m635a.1000", MPI_MODE_RDONLY, MPI_INFO_NULL, &mpiin);
+   /* if ( (MPI_File_open(MPI_COMM_SELF,"l2464f211b600m0102m0509m635a.1000", MPI_MODE_RDONLY, MPI_INFO_NULL, &mpiin)) != MPI_SUCCESS) {
+       printf("could not open input file\n");
+       printf("error %d.\n", errno);
+       MPI_Abort(MPI_COMM_SELF, err);
+       printf("MPI error %d.\n", err);
+    } */
+   /*MPI_File_read(mpiin, milc_magic_number, 1, MPI_INT, &status);
+      if(*milc_magic_number == MILC_VERSION_NUMBER) {
+      byterevflag = 0;
+   }
+   else {
+      byterevn(milc_magic_number, 1);
+      if(*milc_magic_number == MILC_VERSION_NUMBER) {
+         byterevflag = 1;
+      } else {
+         printf("Unrecognized version number: %d\nTerminating program.\n",
+                *milc_magic_number);
+         exit(1);
+      }
+   }
+
+   MPI_File_read(mpiin, dim, 4, MPI_INT, &status);
+   if (byterevflag == 1) {
+      byterevn(dim, 4);
+   }
+
+   MPI_File_read(mpiin, startfile, TIMESTAMP_STRING_LEN, MPI_INT, &status);
+   MPI_File_read(mpiin, check, 2, MPI_UNSIGNED, &status);
+
+   if (myid == 0) {
+    printf("magic_number  %d\n", *milc_magic_number);
+    printf("byterev flag is %d\n", byterevflag);
+    printf("nx ny nz nt   %d %d %d %d\n", dim[0], dim[1], dim[2], dim[3]);
+    printf("startfile     %s\n", startfile);
+    printf("checksums: %lx %lx\n", check[0], check[1]);
+   }
+
+  // MPI_File_set_view(mpiin, 96, MPI_FLOAT, MPI_FLOAT, "native", MPI_INFO_NULL); */
+  /* in = fopen(fnamein, "rb");
+      if ( (in = fopen(fnamein, "rb")) == NULL ) {
+      fprintf(stderr, "Unable to open input file %s, ", fnamein);
+      fprintf(stderr, "error %d.\n", errno);
+      exit(1);
+      } */
+
+// for (myid = 0; myid < 7; myid++) {
+ /*  in = fopen(fnamein, "rb");
+   if ((in = fopen(fnamein, "rb")) == NULL) {
+     fprintf(stderr, "Unable to open input file %s, ", fnamein);
+     fprintf(stderr, "error %d.\n", errno);
+      exit(1);
+   }*/
+   myidlong = myid;
+   start = (offset * myid);
+ //  printf("myid is %i and my value of start is %i\n", myid, start);
+   //myidoff = (start + header);
+ //  printf("myid is %i and my value of myidoffset is %i\n", myid, myidoff);
+ // if (myid == 0) {
+    // fseek(in, HEADER_SIZE, SEEK_SET); //HEADER_SIZE is not long int
+ //    fread(buffer, sizeof(float), 442368, in);
+
+   //ierr = MPI_File_read_at(mpiin, HEADER_SIZE, buffer, offset, MPI_FLOAT, &status);
+  // } else {
+     fseek(in, start, SEEK_CUR); // THIS PART NEEDS WORK!!!! TW 3/12/18
+     fread(buffer, sizeof(float), 442368, in);
+  // ierr = MPI_File_read_at(mpiin, (HEADER_SIZE + start), buffer, offset, MPI_FLOAT, &status);
+ //  } 
+     fclose(in);
+// }
+  // ierr = MPI_File_close(&mpiin);
+
+   int nt = dim[3];
+   int nz = dim[2];
+   int ny = dim[1];
+   int nx = dim[0];
+   float gf[18][192][4][2][16];
+
+  // while (k < 442368 ) {
+   //for (t = 0; t < nt; t++) {  // THIS PART NEEDS WORK, EACH PROCESSOR SEES THE SAME VALUE FOR T,Z,Y,X
+    // for (z = 0; z < nz; z++) {  // AND WILL NOT ASSIGN IEO CORRECTLY
+     // for (y = 0; y < ny; y++) {
+      // for (x = 0; x < nx; x++) {
+         for (ibl = 0; ibl < 16; ibl++) {
+          for (isite = 0; isite < 192; isite++) {
+            for (mu = 0; mu < 4; mu++) {
+              for (icri = 0; icri < 18; icri++) {
+              //  if ( (k % 2) == 0 ) { //I KNOW THIS ISNT HOW IT WORKS BUT ITS FOR TESTING
+              //  if (((t+z+x+y) % 2) == 0) {
+                  gf[icri][isite][mu][0][ibl] = buffer[k];
+              //  } else {
+                //  gf[icri][isite][mu][1][ibl] = buffer[k];
+                 // }
+                  k++;
+                  if ( k == 442368 ) {
+                    goto endloop;
+                  }
+                }
+               // k++;
+               }
+              }
+             }
+           // }
+          // }
+          //}
+        // }
+      // } 
+    //   k++;
+       //printf("on iteration %d",k);
+
+   // }
+
+endloop:
+
+
+   sprintf(fnameout, "l2464f211b600m0102m0509m635a.0001%i", myid); //creates a string stored in fnameout
+   out = fopen(fnameout, "w+b");
+   if ((out = fopen(fnameout, "w+b")) == NULL) {
+     fprintf(stderr, "Unable to open input file %s, ", fnameout);
+     fprintf(stderr, "error %d.\n", errno);
+      exit(1);
+   }
+  /* MPI_File_open(MPI_COMM_SELF, "fnameout", MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &mpiout); // call to fnameout here has to be the problem
+     if ( ( MPI_File_open(MPI_COMM_SELF, "fnameout", MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &mpiout)) != MPI_SUCCESS) {
+         printf("could not open the file\n");
+         MPI_Abort(MPI_COMM_SELF, err);
+         printf("MPI error %d.\n", err);
+     }
+   MPI_File_write(mpiout, gf, 442368, MPI_FLOAT, &status);
+ //  MPI_File_read(mpiout, u, 5, MPI_FLOAT, &status);*/
+   fwrite(gf, sizeof(float), 442368, out);
+    if ( (fwrite(gf, sizeof(float), 442368, out)) != 442368 ) {
+      fprintf(stderr, "unable to write to file %s, ", out);
+      fprintf(stderr, "error %d.\n", errno);
+      exit(1);
+    }
+   fclose(out);
+  // MPI_File_close(&mpiout);
+
+  if (myid == 0) {
+  /* MPI_File_open(MPI_COMM_SELF, "l2464f211b600m0102m0509m635a.00010", MPI_MODE_RDONLY, MPI_INFO_NULL, &mpiout);
+   MPI_File_read(mpiout, u, 5, MPI_FLOAT, &status);
+   MPI_File_close(&mpiout); */
+   fopen("l2464f211b600m0102m0509m635a.00010", "rb");
+   fread(u, sizeof(float), 6, out);
+   fclose(out); 
+   printf("myid is %i and my first five floats are %f %f %f %f %f %f\n", myid, u[0], u[1], u[2], u[3], u[4], u[5]);
+   }
+  
+   if (myid == 1) {
+     fopen("l2464f211b600m0102m0509m635a.00011", "rb");
+     fread(myu, sizeof(float), 6, out);
+     fclose(out);
+     printf("myid is %i and my first five floats are %f %f %f %f %f %f\n", myid, myu[0], myu[1], myu[2], myu[3], myu[4], myu[5]);
+   }
+ 
+   ierr = MPI_Finalize();
+
+   if (myid == 0) {
+    printf("magic_number  %d\n", *milc_magic_number);
+    printf("byterev flag is %d\n", byterevflag);
+    printf("nx ny nz nt   %d %d %d %d\n", dim[0], dim[1], dim[2], dim[3]);
+    printf("startfile     %s\n", startfile);
+    printf("checksums: %lx %lx\n", check[0], check[1]);
+    printf("%f\n", gf[0][0][0][0][0]);
+    printf("%f\n", buffer[0]);
+    printf("%f\n", gf[1][0][0][0][0]);
+    printf("%f\n", buffer[1]);
+    printf("%f\n", gf[2][0][0][0][0]);
+    printf("%f\n", buffer[2]);
+    printf("%f\n", gf[3][0][0][0][0]);
+    printf("%f\n", buffer[3]);
+    printf("%f\n", gf[4][0][0][0][0]);
+    printf("%f\n", buffer[4]);
+    printf("%f\n", gf[5][0][0][0][0]);
+    printf("%f\n", buffer[5]);
+    printf("%f\n", gf[1][1][0][0][0]);
+   }
+
+   if (myid == 1) {
+    printf("%f\n", gf[0][0][0][0][0]);
+    printf("%f\n", buffer[0]);
+    printf("%f\n", gf[1][0][0][0][0]);
+    printf("%f\n", buffer[1]);
+    printf("%f\n", gf[2][0][0][0][0]);
+    printf("%f\n", buffer[2]);
+    printf("%f\n", gf[3][0][0][0][0]);
+    printf("%f\n", buffer[3]);
+    printf("%f\n", gf[4][0][0][0][0]);
+    printf("%f\n", buffer[4]);
+    printf("%f\n", gf[5][0][0][0][0]);
+    printf("%f\n", buffer[5]);
+  }  //end comment
+
+   if (myid == 2) {
+    printf("%f\n", gf[0][0][0][0][0]);
+    printf("%f\n", buffer[0]);
+    printf("%f\n", gf[1][0][0][0][0]);
+    printf("%f\n", buffer[1]);
+    printf("%f\n", gf[2][0][0][0][0]);
+    printf("%f\n", buffer[2]);
+    printf("%f\n", gf[3][0][0][0][0]);
+    printf("%f\n", buffer[3]);
+    printf("%f\n", gf[4][0][0][0][0]);
+    printf("%f\n", buffer[4]);
+    printf("%f\n", gf[5][0][0][0][0]);
+    printf("%f\n", buffer[5]);
+  }
+
+  return 0;
+
+}
+
+void byterevn(int w[], int n)
+{
+  register int old,new;
+  int j;
+
+  for(j=0; j<n; j++)
+    {
+      old = w[j];
+      new = old >> 24 & 0x000000ff;
+      new |= old >> 8 & 0x0000ff00;
+      new |= old << 8 & 0x00ff0000;
+      new |= old << 24 & 0xff000000;
+      w[j] = new;
+    }
+} // byterevn
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
